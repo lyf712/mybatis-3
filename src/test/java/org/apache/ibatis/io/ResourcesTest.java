@@ -169,5 +169,30 @@ class ResourcesTest extends BaseDataTest {
     Resources.setCharset(charset);
 
   }
+  
+  // 以下用于理解 URL，ClassLoader，等概念：JVM的类加载机制，结合着理解学习
+  @Test
+  void testPath() throws IOException {
+    // 加 / 的意义是？ now, some class loaders want this leading "/", so we'll add it and try again if we didn't find the resource
+    // 处理的是类加载器的原因（部分类加载器需要 前缀，并非是全路径
+    try(InputStream in = Resources.getResourceAsStream(PATH_TEST)){
+      assertNotNull(in);
+    }
+  }
+  
+  @Test
+  void testDirectClLoad() throws IOException {
+    /**
+     * ClassLoader 的 getResourceAsStream 方法加载资源时，路径通常是相对于类路径的根目录，
+     * 而不是相对于某个特定类的位置。这意味着无法直接使用相对于某个类的位置的路径来加载资源。
+     * 如果你想相对于某个类的位置加载资源，可以使用 Class 类的 getResourceAsStream 方法，该方法加载的资源路径是相对于类所在的包的位置
+     */
+//    ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
+//    InputStream resourceAsStream = contextClassLoader.getResourceAsStream(PATH_TEST);
+//    assertNotNull(resourceAsStream);
+    try(InputStream in = ResourcesTest.class.getResourceAsStream(PATH_TEST)){
+      assertNotNull(in);
+    }
+  }
 
 }

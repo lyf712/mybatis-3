@@ -22,14 +22,21 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 
+import javax.xml.namespace.QName;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpressionException;
+import javax.xml.xpath.XPathFactory;
 
 import org.apache.ibatis.builder.BuilderException;
 import org.apache.ibatis.io.Resources;
 import org.junit.jupiter.api.Test;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 
 class XPathParserTest {
   private final String resource = "nodelet_test.xml";
@@ -154,9 +161,12 @@ class XPathParserTest {
 
   private Document getDocument(String resource) {
     try {
+      // 此处的设计：SessionFactoryBuilder（构建者
+      // xxxBuilderFactory,构建者的Factory
       InputSource inputSource = new InputSource(Resources.getResourceAsReader(resource));
       DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
       factory.setNamespaceAware(false);
+      // 忽略注释
       factory.setIgnoringComments(true);
       factory.setIgnoringElementContentWhitespace(false);
       factory.setCoalescing(false);
@@ -184,6 +194,8 @@ class XPathParserTest {
   }
 
   private void testEvalMethod(XPathParser parser) {
+    // 理解XML的基本使用：封装-- Document，XPATH，】
+    // XML 的文件类型：@see javax.xml.xpath.XPathConstants
     assertEquals((Long) 1970L, parser.evalLong("/employee/birth_date/year"));
     assertEquals((Long) 1970L, parser.evalNode("/employee/birth_date/year").getLongBody());
     assertEquals((short) 6, (short) parser.evalShort("/employee/birth_date/month"));
@@ -194,9 +206,11 @@ class XPathParserTest {
     assertEquals((Double) 5.8d, parser.evalDouble("/employee/height"));
     assertEquals((Double) 5.8d, parser.evalNode("/employee/height").getDoubleBody());
     assertEquals((Double) 5.8d, parser.evalNode("/employee").evalDouble("height"));
+    // 标签内部元素
     assertEquals("${id_var}", parser.evalString("/employee/@id"));
     assertEquals("${id_var}", parser.evalNode("/employee/@id").getStringBody());
     assertEquals("${id_var}", parser.evalNode("/employee").evalString("@id"));
+    
     assertEquals(Boolean.TRUE, parser.evalBoolean("/employee/active"));
     assertEquals(Boolean.TRUE, parser.evalNode("/employee/active").getBooleanBody());
     assertEquals(Boolean.TRUE, parser.evalNode("/employee").evalBoolean("active"));
@@ -211,4 +225,26 @@ class XPathParserTest {
     assertEquals("employee[${id_var}]_height", node.getValueBasedIdentifier());
   }
 
+  // 以下用于 个人熟悉XML的解析
+  @Test
+  void testXmlBaseUse()
+      throws ParserConfigurationException, IOException, SAXException, XPathExpressionException {
+    // Document(解析的目标文档 xml --->>> Doc
+    DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
+    // 忽略注释？
+    // 解析Doc的处理，
+    documentBuilderFactory.setIgnoringComments(true);
+    
+    
+    DocumentBuilder documentBuilder = documentBuilderFactory.newDocumentBuilder();
+    Document doc = documentBuilder.parse(Resources.getResourceAsStream(resource));
+  
+    XPath xPath = XPathFactory.newInstance().newXPath();
+    
+    // QName.valueOf("")
+    Object evaluate = xPath.evaluate("/employee/birth_date/year", doc, XPathConstants.STRING);
+    assertEquals("1970",String.valueOf(evaluate));
+  
+  }
+  
 }

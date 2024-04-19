@@ -313,7 +313,7 @@ class SqlSessionTest extends BaseDataTest {
   void shouldDeleteAuthor() {
     try (SqlSession session = sqlMapper.openSession()) {
       final int id = 102;
-
+     
       List<Author> authors = session.selectList("org.apache.ibatis.domain.blog.mappers.AuthorMapper.selectAuthor", id);
       assertEquals(1, authors.size());
 
@@ -876,6 +876,15 @@ class SqlSessionTest extends BaseDataTest {
       assertEquals(1, posts.get(0).getId());
       assertEquals(3, posts.get(1).getId());
     }
+  }
+  
+  // 以下用于个人的理解
+  @Test
+  void testStatement(){
+    // MappedStatement [MapperMethod进行存储--]
+    //       MappedStatement ms = configuration.getMappedStatement(statement);
+    //      dirty |= ms.isDirtySelect();
+    //      return executor.query(ms, wrapCollection(parameter), rowBounds, handler);
   }
 
 }

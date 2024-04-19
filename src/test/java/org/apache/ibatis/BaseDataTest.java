@@ -38,6 +38,9 @@ public abstract class BaseDataTest {
   public static final String JPETSTORE_DDL = "org/apache/ibatis/databases/jpetstore/jpetstore-hsqldb-schema.sql";
   public static final String JPETSTORE_DATA = "org/apache/ibatis/databases/jpetstore/jpetstore-hsqldb-dataload.sql";
 
+  // io 的resource 相对路径、绝对路径的理解，classloader,,
+  public static final String PATH_TEST = "\\path_test.xml";
+  
   public static UnpooledDataSource createUnpooledDataSource(String resource) throws IOException {
     Properties props = Resources.getResourceAsProperties(resource);
     UnpooledDataSource ds = new UnpooledDataSource();
