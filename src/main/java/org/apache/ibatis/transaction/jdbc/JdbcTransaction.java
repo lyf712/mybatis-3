@@ -63,6 +63,7 @@ public class JdbcTransaction implements Transaction {
 
   @Override
   public Connection getConnection() throws SQLException {
+    // 是否需要加锁，避免重复连接的问题？
     if (connection == null) {
       openConnection();
     }

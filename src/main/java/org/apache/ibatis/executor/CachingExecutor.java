@@ -93,11 +93,21 @@ public class CachingExecutor implements Executor {
   @Override
   public <E> List<E> query(MappedStatement ms, Object parameterObject, RowBounds rowBounds, ResultHandler resultHandler,
       CacheKey key, BoundSql boundSql) throws SQLException {
+    /**
+     * MappedStatement 处 解析进行加入 Cache（考虑是否可以进行编排Cache，定义Cache）；
+     * 所以说不同Session，cache是一致的，都是Configuration解析定义出来的，key则一样
+     */
     Cache cache = ms.getCache();
     if (cache != null) {
       flushCacheIfRequired(ms);
       if (ms.isUseCache() && resultHandler == null) {
         ensureNoOutParams(ms, boundSql);
+        /**
+         * 不同SqlSession的Executor不同，CacheExecutor的tcm也不同。
+         * 那么当commit时，怎么同步到其他Cache的tcm的？
+         * Cache是Mapper中共享的Cache（在初始化阶段，创建）
+         *
+         */
         @SuppressWarnings("unchecked")
         List<E> list = (List<E>) tcm.getObject(cache, key);
         if (list == null) {

@@ -80,6 +80,13 @@ public class MapperProxy<T> implements InvocationHandler, Serializable {
   @Override
   public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
     try {
+      /**
+       * 这行代码首先检查当前调用的方法是否是继承自 Object 类的方法。
+       * 在 Java 中，所有的类都是继承自 Object 类的，因此这个判断实际上是在检查是否是调用了 Object 类中的方法。
+       * return method.invoke(this, args);: 如果当前调用的方法确实是继承自 Object 类的方法，那么就直接调用这个方法，
+       * 并传入当前对象 this 和方法的参数 args。这是一种特殊情况的处理，主要是为了让动态代理对象正确地处理 Object 类的方法，
+       * 比如 toString(), equals(), hashCode() 等。
+       */
       if (Object.class.equals(method.getDeclaringClass())) {
         return method.invoke(this, args);
       }

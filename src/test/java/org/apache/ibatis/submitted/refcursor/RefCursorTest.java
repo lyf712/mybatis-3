@@ -131,6 +131,7 @@ class RefCursorTest {
       parameter.put("orderId", 99);
       mapper.getOrder3(parameter, resultContext -> {
         // won't be used
+        
       });
       assertEquals(0, parameter.get("detailCount"));
     }

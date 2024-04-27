@@ -16,6 +16,8 @@
 package org.apache.ibatis.executor.resultset;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.sql.Connection;
@@ -53,6 +55,10 @@ class DefaultResultSetHandlerTest2 {
 
   @Spy
   private ImpatientResultSet rs;
+  
+  @Mock
+  private ImpatientResultSet rs2;
+  
   @Mock
   private Statement stmt;
   @Mock
@@ -96,7 +102,7 @@ class DefaultResultSetHandlerTest2 {
     when(stmt.getConnection()).thenReturn(conn);
     when(conn.getMetaData()).thenReturn(dbmd);
     when(dbmd.supportsMultipleResultSets()).thenReturn(false); // for simplicity.
-
+    //int rowIndex = rs.rowIndex;
     final List<Object> results = resultSetHandler.handleResultSets(stmt);
     assertEquals(0, results.size());
   }
@@ -144,6 +150,22 @@ class DefaultResultSetHandlerTest2 {
     final List<Object> results = resultSetHandler.handleResultSets(stmt);
     assertEquals(0, results.size());
   }
+  
+  // 以下为lyf个人测试
+  // @Mock则会完全模拟（when ,,_
+  // @Spy 则部分模拟，采用默认的构造器构造一个对象
+  @Test
+  public void testSpy() throws SQLException {
+   // System.out.println(rs.getInt("id"));
+    int rowIndex = rs.rowIndex;
+    int rowIndex1 = rs2.rowIndex;
+    when(rs2.next()).thenReturn(true);
+    assertTrue(rs2.next());
+//    when(rs2.rowIndex).thenReturn(-1);
+//    //verify(rs2);
+//    assertEquals(-1,rs2.rowIndex);
+  }
+  
 
   /*
    * Simulate a driver that closes ResultSet automatically when next() returns false (e.g. DB2).

@@ -27,7 +27,10 @@ import org.apache.ibatis.session.defaults.DefaultSqlSessionFactory;
 
 /**
  * Builds {@link SqlSession} instances.
- *
+ * Note:
+ * 实现SqlSessionFactory的建造者。
+ * 接入的资源（配置） ，Reader和InputStream两种类型。
+ * 1.多参构造，null,null组合设计
  * @author Clinton Begin
  */
 public class SqlSessionFactoryBuilder {
@@ -76,9 +79,12 @@ public class SqlSessionFactoryBuilder {
 
   public SqlSessionFactory build(InputStream inputStream, String environment, Properties properties) {
     try {
+      // 是否可以抽一下私有方法：---，需要进行 instanceof 判断一下，再强转
       XMLConfigBuilder parser = new XMLConfigBuilder(inputStream, environment, properties);
       return build(parser.parse());
     } catch (Exception e) {
+      // 为什么方法不指明 throws ???
+      // 包装为 PersistentE,为什么返回参数又要范围大于该范围？？？
       throw ExceptionFactory.wrapException("Error building SqlSession.", e);
     } finally {
       ErrorContext.instance().reset();

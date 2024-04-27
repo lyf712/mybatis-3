@@ -98,12 +98,35 @@ import org.apache.ibatis.type.TypeHandler;
 import org.apache.ibatis.type.TypeHandlerRegistry;
 
 /**
+ * 大配置类（核心关键）：
+ * 1.加载config.xml文件，也可手动配置
+ *   - 衍生出 Mapper文件的加载：
+ *     <mappers></mappers>
+ *
+ * 2.关键性配置
+ *   （1）Env:ds,tx,
+ *    (2)properties,alias
+ *    (3)plugin...、setting
+ *    (4)objectFactory,Handler
+ *    (5)parameterMap,resultMap
+ *
+ * 3.非final类，可子类继承
+ *
  * @author Clinton Begin
  */
 public class Configuration {
-
+  
+  /**
+   * 基础环境：重要，，标签envs??应该为map才对？？ 这是默认的环境？
+   * DS：-- JDBC Connection相关，重要，DriverManager查看
+   * TsFactory:事务管理工厂，一个事务对应一个连接-Connection，openSession则会创建一个事务
+   *  - JDBC：
+   *  - Managed:交由spring等容器
+   */
   protected Environment environment;
 
+  // 以下为一些基础开关
+  
   protected boolean safeRowBoundsEnabled;
   protected boolean safeResultHandlerEnabled = true;
   protected boolean mapUnderscoreToCamelCase;
@@ -119,18 +142,39 @@ public class Configuration {
   protected boolean nullableOnForEach;
   protected boolean argNameBasedConstructorAutoMapping;
 
+  //
+  
+  
   protected String logPrefix;
   protected Class<? extends Log> logImpl;
   protected Class<? extends VFS> vfsImpl;
   protected Class<?> defaultSqlProviderType;
+  /**
+   * 本地缓存的级别：会话session级别、statement语句级别
+   * 一级缓存：
+   * 二级缓存：namespace
+   */
   protected LocalCacheScope localCacheScope = LocalCacheScope.SESSION;
+  /**
+   * 对java.sql的Types(采用Constants的方式）进行封装，便于拓展Oracle等其他服务的---
+   */
   protected JdbcType jdbcTypeForNull = JdbcType.OTHER;
   protected Set<String> lazyLoadTriggerMethods = new HashSet<>(
       Arrays.asList("equals", "clone", "hashCode", "toString"));
   protected Integer defaultStatementTimeout;
   protected Integer defaultFetchSize;
+  /**
+   * 返回 返回集合的类型 todo ???
+   */
   protected ResultSetType defaultResultSetType;
+  /**
+   * 执行器类型：关键（注意Base,Simple,,和Cache之间的组合）
+   */
   protected ExecutorType defaultExecutorType = ExecutorType.SIMPLE;
+  
+  /**
+   * 自动映射：：：nested的概念 todo ??
+   */
   protected AutoMappingBehavior autoMappingBehavior = AutoMappingBehavior.PARTIAL;
   protected AutoMappingUnknownColumnBehavior autoMappingUnknownColumnBehavior = AutoMappingUnknownColumnBehavior.NONE;
 
@@ -150,16 +194,47 @@ public class Configuration {
    */
   protected Class<?> configurationFactory;
 
+  // 注册 KV
+  
   protected final MapperRegistry mapperRegistry = new MapperRegistry(this);
+  
+  /**
+   * 代理设计：
+   * 最终的落脚点是Executor,对Executor进行代理
+   * 做前后的处理，并且是形成 List<Intercepotr>
+   *     层层代理的效果：
+   *     对比Executor本身的组合
+   */
   protected final InterceptorChain interceptorChain = new InterceptorChain();
   protected final TypeHandlerRegistry typeHandlerRegistry = new TypeHandlerRegistry(this);
+  /**
+   * 别名注册：
+   * 挺关键的----config需要用简称去标识何种配置，，方便拿取对应的类
+   */
   protected final TypeAliasRegistry typeAliasRegistry = new TypeAliasRegistry();
   protected final LanguageDriverRegistry languageRegistry = new LanguageDriverRegistry();
-
+  
+  /**
+   * SQL映射的关键存储。。
+   * StrictMap 基础 ConcurrentHashMap的设计。
+   * BigFun：代入处理冲突信息的；；
+   * applyCurrentNamespace()
+   * 以为namespace.method为粒度
+   * MappMethod取的时候
+   * resolveMappedStatement（）方法
+   *     String statementId = mapperInterface.getName() + "." + methodName;
+   *     直接这样拼接-----
+   *  对于ID是否有设计别名的--
+   */
   protected final Map<String, MappedStatement> mappedStatements = new StrictMap<MappedStatement>(
       "Mapped Statements collection")
           .conflictMessageProducer((savedValue, targetValue) -> ". please check " + savedValue.getResource() + " and "
               + targetValue.getResource());
+  
+  /**
+   * id:namespace为粒度
+   * Cache：CacheBuilder进行包装，，看看 setStandards进行Cache的层层包装设计
+   */
   protected final Map<String, Cache> caches = new StrictMap<>("Caches collection");
   protected final Map<String, ResultMap> resultMaps = new StrictMap<>("Result Maps collection");
   protected final Map<String, ParameterMap> parameterMaps = new StrictMap<>("Parameter Maps collection");
@@ -167,6 +242,9 @@ public class Configuration {
 
   protected final Set<String> loadedResources = new HashSet<>();
   protected final Map<String, XNode> sqlFragments = new StrictMap<>("XML fragments parsed from previous mappers");
+  
+  // 二次处理：避免有未成功处理的
+  
   protected final Collection<XMLStatementBuilder> incompleteStatements = new LinkedList<>();
   protected final Collection<CacheRefResolver> incompleteCacheRefs = new LinkedList<>();
   protected final Collection<ResultMapResolver> incompleteResultMaps = new LinkedList<>();

@@ -73,15 +73,19 @@ public class MapperMethod {
         break;
       }
       case SELECT:
+        // 返回空，且有ResultHandler的参数
         if (method.returnsVoid() && method.hasResultHandler()) {
           executeWithResultHandler(sqlSession, args);
           result = null;
+        // 那xxx 以下三种方式含义 resultHandler呢？
+        // List<>
         } else if (method.returnsMany()) {
           result = executeForMany(sqlSession, args);
         } else if (method.returnsMap()) {
           result = executeForMap(sqlSession, args);
         } else if (method.returnsCursor()) {
           result = executeForCursor(sqlSession, args);
+          
         } else {
           Object param = method.convertArgsToSqlCommandParam(args);
           result = sqlSession.selectOne(command.getName(), param);
@@ -170,6 +174,7 @@ public class MapperMethod {
 
   private <E> Object convertToDeclaredCollection(Configuration config, List<E> list) {
     Object collection = config.getObjectFactory().create(method.getReturnType());
+    // todo 以下两句没有看出来有何用？
     MetaObject metaObject = config.newMetaObject(collection);
     metaObject.addAll(list);
     return collection;

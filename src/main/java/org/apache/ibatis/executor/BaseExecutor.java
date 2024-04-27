@@ -151,6 +151,15 @@ public abstract class BaseExecutor implements Executor {
     List<E> list;
     try {
       queryStack++;
+      /**
+       * 1.为什么 resultHandler为空，才从本地缓存拿数据
+       * 2.空位符的作用是什么
+       *
+       * 如果resultHandler不空，有可能Resulthandler不同，会导致处理结果不同，所以说必须
+       * 重新查询？？
+       * 等于空时，则未无需进行
+       *
+       */
       list = resultHandler == null ? (List<E>) localCache.getObject(key) : null;
       if (list != null) {
         handleLocallyCachedOutputParameters(ms, key, parameter, boundSql);
@@ -331,8 +340,17 @@ public abstract class BaseExecutor implements Executor {
   private <E> List<E> queryFromDatabase(MappedStatement ms, Object parameter, RowBounds rowBounds,
       ResultHandler resultHandler, CacheKey key, BoundSql boundSql) throws SQLException {
     List<E> list;
+    /**
+     * 避免缓存穿透：在查询结果为空时，如果不使用占位符，每次查询都会去数据库中查询一次，
+     * 这样可能会导致大量的无效查询请求穿透缓存，增加数据库负载。通过使用占位符，在第一次查询后将占位符放入缓存中，
+     * 即使查询结果为空，下次查询时也会直接命中缓存，避免了无效的数据库查询。
+     * 保持缓存一致性：在执行查询前放置占位符，可以保证在查询过程中其他并发请求不会重复执行同一个查询。
+     * 即使多个并发请求同时发起相同的查询，只有一个请求会去执行实际的查询，其他请求会直接命中缓存中的占位符。这样可以降低数据库的并发压力，并减少重复查询带来的性能损耗。
+     * 简化代码逻辑：通过使用占位符，可以简化代码逻辑，避免在执行查询前后进行额外的判断和处理。无论查询结果是否为空，都统一使用相同的逻辑来处理缓存，提高了代码的可维护性和可读性
+     */
     localCache.putObject(key, EXECUTION_PLACEHOLDER);
     try {
+      // 查数据库比较耗时，此段时间，本已去存
       list = doQuery(ms, parameter, rowBounds, resultHandler, boundSql);
     } finally {
       localCache.removeObject(key);
